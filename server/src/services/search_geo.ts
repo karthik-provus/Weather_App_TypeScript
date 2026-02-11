@@ -1,30 +1,8 @@
 
-// import axios from "axios";
-
-// export const searchCities = async (query: string) => {
-//   if (!query) return [];
-
-//   const response = await axios.get("https://wft-geo-db.p.rapidapi.com/v1/geo/cities", {
-//     headers: {
-//       "X-RapidAPI-Key": process.env.RAPID_API_KEY!,
-//       "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com",
-//     },
-//     params: {
-//       namePrefix: query,
-//       limit: 10,
-//       sort: "-population"
-//     },
-//   });
-
-//   return response.data.data.map((c: any) => ({
-//     city: c.city,
-//     country: c.country,
-//   }));
-// };
-
 import axios from 'axios';
 import { CitySuggestion, GeoDBResponse } from '../types/city_suggestions';
 import { log } from 'node:console';
+import cache from '../utils/cache';
 
 export const searchCities = async (query: string): Promise<CitySuggestion[]> => {
   const API_KEY = process.env.RAPID_API_KEY;
@@ -34,6 +12,18 @@ export const searchCities = async (query: string): Promise<CitySuggestion[]> => 
 
   // Don't search for tiny strings
   if (!query || query.length < 3) return [];
+  // 1. DEFINE A UNIQUE KEY
+  // We lowercase the query so "Pune" and "pune" are treated as the same request
+  const cacheKey = `city_search_${query.toLowerCase()}`;
+
+  // 2. CHECK CACHE FIRST
+  const cachedData = cache.get<CitySuggestion[]>(cacheKey);
+  if (cachedData) {
+    console.log(`[CACHE HIT] Returning saved results for: ${query}`);
+    return cachedData;
+  }
+
+  console.log(`[API CALL] Fetching fresh data for: ${query}`);
   try {
     const response = await axios.get<GeoDBResponse>("https://wft-geo-db.p.rapidapi.com/v1/geo/cities", {
       headers: {
@@ -66,6 +56,9 @@ export const searchCities = async (query: string): Promise<CitySuggestion[]> => 
         // Helper string for the frontend dropdown
         label: `${city.name}, ${city.region}, ${city.country}`
       }));
+      // 3. SAVE TO CACHE
+    // Store this result for 24 hours (86400 seconds) because city names don't change often
+    cache.set(cacheKey, suggestions, 86400);
 
     return suggestions;
 
