@@ -4,7 +4,7 @@ import { CurrentWeatherResponse, WeatherAPIResult, WeatherResponse } from "../ty
 export const map_current_weather = (data: WeatherResponse): CurrentWeatherResponse => ({
   city: data.location.name,
   country: data.location.country,
-  localtime: data.location.localtime,
+  localtime: data.location.localtime!,
   temp_c: data.current.temp_c,
   temp_f: data.current.temp_f,
   condition: data.current.condition.text,
