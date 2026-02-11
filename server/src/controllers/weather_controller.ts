@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { get_weather_data } from '../services/weather_service';
+import { CurrentWeatherResponse } from '../types/weather';
+import { map_current_weather } from '../mapper/current_weather.mapper';
 
 export const get_weather = async (req: Request, res: Response) => {
   // query would look something like this: /weather?city=London
@@ -31,23 +33,9 @@ export const get_current_weather = async (req: Request, res: Response) => {
   try {
     const data = await get_weather_data(city);
 
-    const current = {
-      city: data.location.name,
-      country: data.location.country,
-      localtime: data.location.localtime,
-      temp_c: data.current.temp_c,
-      temp_f: data.current.temp_f,
-      condition: data.current.condition.text,
-      icon: data.current.condition.icon,
-      humidity: data.current.humidity,
-      wind_kph: data.current.wind_kph,
-      wind_mph: data.current.wind_mph,
-      feelslike_c: data.current.feelslike_c,
-      feelslike_f: data.current.feelslike_f,
-      uv: data.current.uv,
-    };
+    const current_weather_data: CurrentWeatherResponse = map_current_weather(data)
 
-    res.status(200).json(current);
+    res.status(200).json(current_weather_data);
 
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error (current weather)";

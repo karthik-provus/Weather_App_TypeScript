@@ -7,6 +7,23 @@ export interface WeatherAPIError {
   };
 }
 
+export interface CurrentWeatherResponse {
+  city: string;
+  country: string;
+  localtime: string;
+  temp_c: number;
+  temp_f: number;
+  condition: string;
+  icon: string;
+  humidity: number;
+  wind_kph: number;
+  wind_mph: number;
+  feelslike_c: number;
+  feelslike_f: number;
+  uv: number;
+}
+
+
 export interface WeatherResponse {
   location: Location;
   current: Current;
