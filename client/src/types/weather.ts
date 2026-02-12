@@ -59,6 +59,7 @@ export interface ForecastDay {
     condition: WeatherCondition;
     maxwind_kph: number;
     daily_chance_of_rain: number;
+    daily_chance_of_snow: number;
   };
   hour: HourData[];
 }
@@ -82,4 +83,23 @@ export interface WeatherResponse {
   forecast?: {
     forecastday: ForecastDay[];
   };
+  alerts?: {
+    alert: AlertData[];
+  };
+}
+
+export interface AlertData {
+  headline: string;
+  msgtype: string;
+  severity: string;
+  urgency: string;
+  areas: string;
+  category: string;
+  certainty: string;
+  event: string;
+  note: string;
+  effective: string;
+  expires: string;
+  desc: string;
+  instruction: string;
 }

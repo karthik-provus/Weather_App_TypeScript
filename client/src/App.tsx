@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from './components/ui/button';
 import { ForecastDay, HourData, WeatherResponse } from './types/weather';
 import { WeatherMap } from '@/components/weather/WeatherMap';
+import { LiveAlerts } from '@/components/weather/LiveAlerts';
 
 function App() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
@@ -79,7 +80,7 @@ function App() {
   // Auto-load on startup
   useEffect(() => {
     handleLocationClick();
-    console.log(unit)
+    // console.log(unit)
   }, []);
 
   // Handle Slider Change
@@ -153,6 +154,8 @@ function App() {
           {/* MAIN CONTENT */}
           {!loading && weather && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-forwards">
+
+              <LiveAlerts weather={weather} forecast={forecast}/>
 
               {/* Top Row: Current Weather */}
               <CurrentWeather data={weather} unit={unit} />
