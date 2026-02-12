@@ -1,259 +1,155 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { HourData } from "@/types/weather";
-import {
-    Area,
-    AreaChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
-} from "recharts";
 
 interface HourlyTemperatureProps {
     data: HourData[];
     unit: "C" | "F";
+    isDay: boolean; // <--- New Prop to control the theme
 }
 
-export function HourlyTemperature({ data, unit }: HourlyTemperatureProps) {
+export function HourlyTemperature({ data, unit, isDay }: HourlyTemperatureProps) {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const isDark = !isDay; // Helper boolean
+
+    // Auto-scroll or highlight the current hour on load
+    useEffect(() => {
+        const currentHour = new Date().getHours();
+        const index = data.findIndex(item => {
+            const itemHour = parseInt(item.time.split(" ")[1].split(":")[0]);
+            return itemHour === currentHour;
+        });
+        if (index !== -1) setActiveIndex(index);
+    }, [data]);
+
+    const dataKey = unit === "C" ? "temp_c" : "temp_f";
+    const formatTemp = (val: number) => `${Math.round(val)}°`;
+
     return (
-        <Card className="flex-1 w-full h-full min-h-[300px]"> {/* Ensure card has height */}
+        <Card className={`
+        flex-1 w-full h-full min-h-[450px] border-none shadow-xl backdrop-blur-md transition-colors duration-500
+        ${isDark ? 'bg-black/25 text-white' : 'bg-white/80 text-slate-800'}
+    `}>
             <CardHeader>
-                <CardTitle>Today's Temperature</CardTitle>
+                <CardTitle className={`text-xl font-bold flex justify-between items-center ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                    <span>Today's Trend</span>
+                    <span className={`text-sm font-normal px-2 py-1 rounded-md ${isDark ? 'bg-white/10 text-white/70' : 'bg-slate-100 text-slate-500'}`}>
+                        24 Hours
+                    </span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="h-[200px] w-full">
+
+                {/* --- 1. The Interactive Chart --- */}
+                <div className="h-[250px] w-full mb-6">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data}>
+                        <AreaChart
+                            data={data}
+                            onMouseMove={(e) => {
+                                if (e.activeTooltipIndex !== undefined) setActiveIndex(e.activeTooltipIndex as number);
+                            }}
+                            onMouseLeave={() => setActiveIndex(null)}
+                        >
                             <defs>
                                 <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                    <stop offset="5%" stopColor={isDark ? "#60a5fa" : "#3b82f6"} stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor={isDark ? "#60a5fa" : "#3b82f6"} stopOpacity={0} />
                                 </linearGradient>
                             </defs>
 
                             <XAxis
                                 dataKey="time"
-                                stroke="#888888"
-                                fontSize={11}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(value) => {
-                                    const date = new Date(value);
-                                    return date.toLocaleTimeString("en-US", {
-                                        hour: "numeric",
-                                        hour12: true, // Change to false for 24h format (00:00)
-                                    });
-                                }}
-                                interval={3} // Shows 00:00, 03:00, 06:00, etc. Adjust as you like!
-                                padding={{ left: 20, right: 20 }}
-                            />
-
-                            <YAxis
-                                stroke="#888888"
+                                stroke={isDark ? "#94a3b8" : "#94a3b8"}
                                 fontSize={12}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(value) => `${value}°`}
-                                // domain={['dataMin - 2', 'dataMax + 2']}
+                                tickFormatter={(val) => val.split(" ")[1]}
+                                interval={3}
+                            />
+                            <YAxis
+                                stroke={isDark ? "#94a3b8" : "#94a3b8"}
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(val) => `${Math.round(val)}°`}
+                                width={30}
                             />
 
                             <Tooltip
-                                content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                        return (
-                                            <div className="rounded-lg border bg-white p-2 shadow-sm text-xs">
-                                                <div className="flex flex-col">
-                                                    <span className="uppercase text-muted-foreground text-[10px]">Time</span>
-                                                    <span className="font-bold">
-                                                        {/* Extract 00:00 from the payload */}
-                                                        {payload[0].payload.time.split(" ")[1]}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-col mt-1">
-                                                    <span className="uppercase text-muted-foreground text-[10px]">Temp</span>
-                                                    <span className="font-bold text-blue-600">
-                                                        {payload[0].value}°C
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                    return null;
+                                contentStyle={{
+                                    backgroundColor: isDark ? "#1e293b" : "#ffffff",
+                                    borderColor: isDark ? "#334155" : "#e2e8f0",
+                                    borderRadius: "12px",
+                                    color: isDark ? "#fff" : "#1e293b",
+                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)"
                                 }}
+                                itemStyle={{ color: isDark ? "#60a5fa" : "#2563eb", fontWeight: "bold" }}
+                                formatter={(val) => {
+                                    if (val == null) return ["--", "Temp"];
+                                    return [formatTemp(val as number), "Temp"];
+                                }}
+
+                                labelFormatter={(label) => new Date(label).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                             />
 
                             <Area
                                 type="monotone"
-                                dataKey={unit=='C'?"temp_c": "temp_f"}
-                                stroke="#6366f1"
-                                strokeWidth={2}
-                                fillOpacity={0.6}
+                                dataKey={dataKey}
+                                stroke={isDark ? "#60a5fa" : "#3b82f6"} // Lighter blue for dark mode
+                                strokeWidth={3}
+                                fillOpacity={1}
                                 fill="url(#colorTemp)"
+                                activeDot={{ r: 6, strokeWidth: 0, fill: isDark ? "#60a5fa" : "#3b82f6" }}
                             />
                         </AreaChart>
                     </ResponsiveContainer>
                 </div>
+
+                {/* --- 2. The Horizontal Scrollable List --- */}
+                <div className="w-full">
+                    <div className="flex overflow-x-auto pb-4 gap-3 px-2 snap-x scroll-smooth no-scrollbar">
+                        {data.map((item, index) => {
+                            const isActive = activeIndex === index;
+                            const timeString = item.time.split(" ")[1];
+                            const tempValue = unit === "C" ? item.temp_c : item.temp_f;
+
+                            return (
+                                <button
+                                    key={item.time_epoch}
+                                    onClick={() => setActiveIndex(index)}
+                                    className={`
+                    flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-300 min-w-[70px] border snap-center cursor-pointer
+                    ${isActive
+                                            ? "bg-blue-600 text-white shadow-lg scale-105 border-blue-600"
+                                            : isDark
+                                                ? "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+                                                : "bg-white border-slate-100 text-slate-600 hover:bg-slate-50"
+                                        }
+                  `}
+                                >
+                                    <span className={`text-[10px] font-bold mb-1 ${isActive ? "text-blue-100" : (isDark ? "text-slate-400" : "text-slate-400")}`}>
+                                        {timeString}
+                                    </span>
+
+                                    <img
+                                        src={item.condition.icon}
+                                        alt="weather icon"
+                                        className="w-8 h-8 mb-1 drop-shadow-sm"
+                                    />
+
+                                    <span className={`text-sm font-bold ${isActive ? "text-white" : (isDark ? "text-white" : "text-slate-800")}`}>
+                                        {Math.round(tempValue)}°
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
             </CardContent>
         </Card>
     );
 }
-
-
-
-
-// import { useState, useEffect } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import {
-//   Area,
-//   AreaChart,
-//   ResponsiveContainer,
-//   Tooltip,
-//   XAxis,
-//   YAxis,
-// } from "recharts";
-
-// interface HourlyTemperatureProps {
-//   data: any[];
-// }
-
-// export function HourlyTemperature({ data }: HourlyTemperatureProps) {
-//   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-//   // Find the index that matches the current hour
-//   const next12Hours = data.slice(0, 12);
-//   useEffect(() => {
-//     const currentHour = new Date().getHours();
-//     const index = data.findIndex(item => {
-//       const itemHour = parseInt(item.time.split(" ")[1].split(":")[0]); 
-//       return itemHour === currentHour;
-//     });
-//     if (index !== -1) setActiveIndex(index);
-//   }, [data]);
-
-//   return (
-//     <Card className="flex-1 w-full h-full min-h-[450px] border-none shadow-xl bg-white text-slate-800">
-//       <CardHeader>
-//         <CardTitle className="text-xl font-bold text-slate-800">
-//           Temperature Timeline
-//         </CardTitle>
-//       </CardHeader>
-//       <CardContent>
-        
-//         {/* --- 1. The Interactive Chart (Light Theme) --- */}
-//         <div className="h-[250px] w-full mb-6">
-//           <ResponsiveContainer width="100%" height="100%">
-//             <AreaChart 
-//               data={data}
-//               onMouseMove={(e) => {
-//                 if (e.activeTooltipIndex !== undefined) {
-//                   setActiveIndex(e.activeTooltipIndex);
-//                 }
-//               }}
-//             >
-//               <defs>
-//                 <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-//                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
-//                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-//                 </linearGradient>
-//               </defs>
-
-//               <XAxis
-//                 dataKey="time"
-//                 stroke="#94a3b8" // Slate-400
-//                 fontSize={12}
-//                 tickLine={false}
-//                 axisLine={false}
-//                 tickFormatter={(value) => {
-//                    const time = value.split(" ")[1];
-//                    return time.startsWith("0") ? time.slice(1,5) : time.slice(0,5);
-//                 }}
-//                 interval={3}
-//               />
-//               <YAxis
-//                 stroke="#94a3b8"
-//                 fontSize={12}
-//                 tickLine={false}
-//                 axisLine={false}
-//                 tickFormatter={(value) => `${value}°`}
-//               />
-              
-//               <Tooltip 
-//                  contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", color: "#1e293b" }}
-//                  itemStyle={{ color: "#6366f1" }}
-//                  labelStyle={{ color: "#64748b" }}
-//                  formatter={(value) => [`${value}°`, "Temp"]}
-//                  labelFormatter={(label) => {
-//                    const date = new Date(label);
-//                    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-//                  }}
-//               />
-
-//               <Area
-//               data={next12Hours}
-//               activeIndex={activeIndex ?? undefined}
-//   onMouseMove={(e) => {
-//     if (e.activeTooltipIndex !== undefined) {
-//       setActiveIndex(e.activeTooltipIndex);
-//     }}}
-//                 type="monotone"
-//                 dataKey="temp_c"
-//                 stroke="#6366f1"
-//                 strokeWidth={3}
-//                 fillOpacity={1}
-//                 fill="url(#colorTemp)"
-//                 // Highlight the dot corresponding to the clicked/active card
-//                 activeDot={false} // Disable default behavior to handle manually via state if needed
-//               />
-//               {/* Render a custom Dot for the active index */}
-//               {/* (Recharts handles active state via Tooltip internally mostly, but we can rely on sync) */}
-//             </AreaChart>
-//           </ResponsiveContainer>
-//         </div>
-
-//         {/* --- 2. The Horizontal Scrollable List (Fixed) --- */}
-//         <div className="w-full overflow-hidden">
-//           <div className="flex overflow-x-auto pb-4 gap-4 px-2 snap-x scroll-smooth no-scrollbar">
-//             {next12Hours.map((item, index) => {
-//               const isActive = activeIndex === index;
-//               const timeString = item.time.split(" ")[1]; 
-
-//               return (
-//                 <button
-//                   key={item.time_epoch}
-//                   onClick={() => setActiveIndex(index)}
-//                   className={`
-//                     flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 min-w-[80px] border snap-center
-//                     ${isActive 
-//                       ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 border-indigo-600 scale-105" 
-//                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-indigo-300"
-//                     }
-//                   `}
-//                 >
-//                   <span className={`text-xs font-medium mb-1 ${isActive ? "text-indigo-100" : "text-slate-400"}`}>
-//                     {timeString}
-//                   </span>
-                  
-//                   <img 
-//                     src={item.icon} 
-//                     alt="icon" 
-//                     className="w-8 h-8 mb-1"
-//                   />
-                  
-//                   <span className="text-sm font-bold">
-//                     {Math.round(item.temp_c)}°
-//                   </span>
-//                 </button>
-//               );
-//             })}
-//           </div>
-//         </div>
-
-//       </CardContent>
-//     </Card>
-//   );
-// }
-
-
-
 

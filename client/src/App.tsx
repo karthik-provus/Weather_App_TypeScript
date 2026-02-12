@@ -14,6 +14,7 @@ import { Button } from './components/ui/button';
 import { ForecastDay, HourData, WeatherResponse } from './types/weather';
 import { WeatherMap } from '@/components/weather/WeatherMap';
 import { LiveAlerts } from '@/components/weather/LiveAlerts';
+import { getBackgroundGradient } from '@/lib/weatherThemes';
 
 function App() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
@@ -27,7 +28,10 @@ function App() {
 
   // 1. Centralized Data Fetcher
   const fetchWeatherData = async (query: string, daysCount: number) => {
-    setLoading(true);
+    if (!weather) {
+      setLoading(true);
+    }
+    // setLoading(true);
     setLocationError(null);
     setCurrentQuery(query);
     try {
@@ -92,36 +96,76 @@ function App() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-slate-50 to-gray-100 text-slate-900 overflow-x-hidden">
-      <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col min-h-screen">
+  // 2. Calculate the dynamic class
+  // Default to a pleasant "waiting" gradient if data isn't loaded yet
+  const bgGradient = weather
+    ? getBackgroundGradient(weather.current.condition.code, weather.current.is_day)
+    : 'from-sky-50 via-white to-slate-100';
 
-        {/* --- Header Section --- */}
-        <header className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-white rounded-2xl shadow-lg border border-slate-100">
-              <CloudSun className="w-8 h-8 text-blue-500" />
+  // 3. Determine if we need light text (for dark backgrounds)
+  // Simple logic: If it's night OR raining/thundering, we likely have a dark background.
+  const isDarkMode = weather && (
+    weather.current.is_day === 0 ||
+    [1087, 1273, 1276].includes(weather.current.condition.code) // Thunder codes
+  );
+
+  return (
+    <div className={`min-h-screen bg-gradient-to-br ${bgGradient} transition-all duration-1000`}>
+      <div className={`max-w-5xl mx-auto px-4 py-8 md:py-12 flex flex-col min-h-screen ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+
+
+
+        <header className="mb-10 flex flex-col md:flex-row items-center justify-between gap-6 relative z-50">
+          <div className="flex items-center gap-4">
+            {/* Logo Icon with Glassmorphism */}
+            <div className={`p-3 rounded-2xl shadow-lg border backdrop-blur-md transition-all duration-500
+      ${isDarkMode
+                ? 'bg-white/10 border-white/20 text-blue-300'
+                : 'bg-white/80 border-slate-100 text-blue-500'
+              }`}
+            >
+              <CloudSun className="w-10 h-10" />
             </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
-              SkyCast
-            </h1>
+
+            <div>
+              <h1 className={`text-4xl font-extrabold tracking-tight transition-colors duration-1000
+        ${isDarkMode ? 'text-white drop-shadow-md' : 'text-slate-800'}
+      `}>
+                Weather Forecast
+              </h1>
+              <p className={`text-sm font-medium transition-colors duration-1000
+        ${isDarkMode ? 'text-blue-200' : 'text-slate-500'}
+      `}>
+              </p>
+            </div>
           </div>
 
-          {/* Unit Switcher */}
-          <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+          {/* Unit Switcher (Now also adapts to theme) */}
+          <div className={`flex items-center gap-2 p-1 rounded-lg border shadow-sm backdrop-blur-md transition-all duration-500
+      ${isDarkMode
+              ? 'bg-white/10 border-white/20'
+              : 'bg-white/80 border-slate-200'
+            }`}
+          >
             <Button
-              variant={unit === 'C' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setUnit('C')}
-              className={`rounded-md font-bold transition-all ${unit === 'C' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md font-bold transition-all ${unit === 'C'
+                ? (isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-600 text-white')
+                : (isDarkMode ? 'text-blue-100 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                }`}
             >
               °C
             </Button>
             <Button
-              variant={unit === 'F' ? 'default' : 'ghost'}
+              variant="ghost"
               size="sm"
               onClick={() => setUnit('F')}
-              className={`rounded-md font-bold transition-all ${unit === 'F' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900'}`}
+              className={`rounded-md font-bold transition-all ${unit === 'F'
+                ? (isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-600 text-white')
+                : (isDarkMode ? 'text-blue-100 hover:text-white' : 'text-slate-500 hover:text-slate-900')
+                }`}
             >
               °F
             </Button>
@@ -155,7 +199,7 @@ function App() {
           {!loading && weather && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 fill-mode-forwards">
 
-              <LiveAlerts weather={weather} forecast={forecast}/>
+              <LiveAlerts weather={weather} forecast={forecast} />
 
               {/* Top Row: Current Weather */}
               <CurrentWeather data={weather} unit={unit} />
@@ -173,7 +217,11 @@ function App() {
                 {/* Chart takes up 2/3 of the space */}
                 <div className="lg:col-span-2">
                   {hourlyForecast && (
-                    <HourlyTemperature data={hourlyForecast} unit={unit} />
+                    <HourlyTemperature
+                      data={hourlyForecast}
+                      unit={unit}
+                      isDay={Boolean(weather.current.is_day)} // <--- Add this!
+                    />
                   )}
                 </div>
 

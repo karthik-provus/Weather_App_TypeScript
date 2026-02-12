@@ -7,6 +7,8 @@ export interface CitySuggestion {
   label: string;
   lat: number;
   lon: number;
+  region: string;  // <--- Added
+  country: string;
 }
 
 export const WeatherService = {
