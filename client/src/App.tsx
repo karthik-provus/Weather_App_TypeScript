@@ -11,11 +11,12 @@ import { HourlyTemperature } from '@/components/weather/HourlyTemperature';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from './components/ui/button';
+import { ForecastDay, HourData, WeatherResponse } from './types/weather';
 
 function App() {
-  const [forecast, setForecast] = useState<any[]>([]);
-  const [hourlyForecast, setHourlyForecast] = useState<any[]>([]);
-  const [weather, setWeather] = useState<any>(null);
+  const [forecast, setForecast] = useState<ForecastDay[]>([]);
+  const [hourlyForecast, setHourlyForecast] = useState<HourData[]>([]);
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [unit, setUnit] = useState<'C' | 'F'>('C');
@@ -79,8 +80,6 @@ function App() {
     handleLocationClick();
     console.log(unit)
   }, []);
-
-  const toggleUnit = () => setUnit((prev) => (prev === 'C' ? 'F' : 'C'));
 
   // Handle Slider Change
   const handleDaysChange = (newDays: number) => {

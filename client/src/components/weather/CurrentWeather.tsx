@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Cloud, Droplets, Wind, Sun } from "lucide-react";
+import { WeatherResponse } from "@/types/weather";
+import { Droplets, Wind} from "lucide-react";
 
 interface CurrentWeatherProps {
-    data: any; // We will properly type this once the UI is set
+    data: WeatherResponse; // We will properly type this once the UI is set
     unit: "C" | "F";
 }
 

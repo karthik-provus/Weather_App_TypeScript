@@ -1,5 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { HourData } from "@/types/weather";
 import {
     Area,
     AreaChart,
@@ -10,7 +11,7 @@ import {
 } from "recharts";
 
 interface HourlyTemperatureProps {
-    data: any[];
+    data: HourData[];
     unit: "C" | "F";
 }
 

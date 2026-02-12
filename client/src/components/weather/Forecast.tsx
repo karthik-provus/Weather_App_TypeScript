@@ -1,10 +1,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider"; // Import the slider
+import { ForecastDay } from "@/types/weather";
 import { CalendarDays, CalendarRange } from "lucide-react";
 
 interface ForecastProps {
-  forecastData: any[];
+  forecastData: ForecastDay[];
   unit: 'C' | 'F';
   days: number;
   onDaysChange: (days: number) => void;
@@ -72,12 +73,7 @@ export function Forecast({ forecastData, unit, days, onDaysChange }: ForecastPro
                 {formatTemp(day.day.mintemp_c)}°
               </div>
               
-              {/* Optional: Rain Indicator if > 0 */}
-              {day.daily_chance_of_rain > 0 && (
-                <div className="mt-2 text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {day.daily_chance_of_rain}% Rain
-                </div>
-              )}
+              
             </CardContent>
           </Card>
         ))}
