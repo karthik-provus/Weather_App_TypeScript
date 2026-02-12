@@ -15,6 +15,8 @@ import { ForecastDay, HourData, WeatherResponse } from './types/weather';
 import { WeatherMap } from '@/components/weather/WeatherMap';
 import { LiveAlerts } from '@/components/weather/LiveAlerts';
 import { getBackgroundGradient } from '@/lib/weatherThemes';
+import { RecentSearches } from './components/weather/RecentSearches';
+
 
 function App() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
@@ -25,6 +27,33 @@ function App() {
   const [unit, setUnit] = useState<'C' | 'F'>('C');
   const [days, setDays] = useState<number>(3); // Default to 3 days
   const [currentQuery, setCurrentQuery] = useState<string>(""); // Keep track of active city
+  const [searchHistory, setSearchHistory] = useState<CitySuggestion[]>([]);
+
+  // Recently Searched items
+  useEffect(() => {
+    const saved = localStorage.getItem("weather-history");
+    if (saved) {
+      setSearchHistory(JSON.parse(saved));
+    }
+  }, []);
+  const addToHistory = (city: CitySuggestion) => {
+    setSearchHistory((prev) => {
+      // Remove duplicates (if city already exists, remove old one)
+      const filtered = prev.filter((item) => item.id !== city.id);
+      // Add new city to the front
+      const newHistory = [city, ...filtered].slice(0, 5); // Keep max 5
+      // Save to LocalStorage
+      localStorage.setItem("weather-history", JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+  const removeFromHistory = (cityId: number) => {
+    setSearchHistory((prev) => {
+      const newHistory = prev.filter(item => item.id !== cityId);
+      localStorage.setItem("weather-history", JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
 
   // 1. Centralized Data Fetcher
   const fetchWeatherData = async (query: string, daysCount: number) => {
@@ -76,6 +105,7 @@ function App() {
   };
 
   const handleCitySelect = (city: CitySuggestion) => {
+    addToHistory(city);
     // Prefer coordinates for accuracy if available, else name
     const query = city.lat && city.lon ? `${city.lat},${city.lon}` : city.name;
     fetchWeatherData(query, days);
@@ -177,6 +207,12 @@ function App() {
           <SearchBar
             onCitySelect={handleCitySelect}
             onLocationClick={handleLocationClick}
+          />
+          <RecentSearches
+            history={searchHistory}
+            onSelect={handleCitySelect}
+            onClear={removeFromHistory}
+            isDay={weather ? Boolean(weather.current.is_day) : true}
           />
         </div>
 
