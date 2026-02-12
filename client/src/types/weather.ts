@@ -55,7 +55,9 @@ export interface ForecastDay {
     mintemp_f: number;
     avgtemp_c: number;
     avgtemp_f: number;
+    avghumidity: number;
     condition: WeatherCondition;
+    maxwind_kph: number;
     daily_chance_of_rain: number;
   };
   hour: HourData[];
