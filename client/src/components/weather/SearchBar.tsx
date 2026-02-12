@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { MapPin, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { WeatherService, CitySuggestion } from "@/services/weatherService";
+import { Button } from "../ui/button";
 
 interface SearchBarProps {
   onCitySelect: (city: CitySuggestion) => void;
+  onLocationClick: () => void;
 }
 
-export function SearchBar({ onCitySelect }: SearchBarProps) {
+export function SearchBar({ onCitySelect, onLocationClick }: SearchBarProps) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchSuggestions = async () => {
@@ -33,7 +36,7 @@ export function SearchBar({ onCitySelect }: SearchBarProps) {
   }, [query]);
 
   return (
-    <div className="relative w-full max-w-md mx-auto">
+    <div className="relative w-full max-w-md mx-auto flex gap-2">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
         <Input
@@ -43,7 +46,9 @@ export function SearchBar({ onCitySelect }: SearchBarProps) {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 3 && setIsOpen(true)}
         />
+        
       </div>
+      
 
       {/* Floating Suggestions Dropdown */}
       {isOpen && (
@@ -63,6 +68,17 @@ export function SearchBar({ onCitySelect }: SearchBarProps) {
           ))}
         </div>
       )}
+     {/* The Location Button */}
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onLocationClick}
+        title="Use current location"
+        className="shrink-0"
+      >
+        <MapPin className="h-4 w-4 text-slate-600" />
+      </Button>
+      
     </div>
   );
 }

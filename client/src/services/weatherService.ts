@@ -20,8 +20,15 @@ export const WeatherService = {
     return data;
   },
   
-  async getForecast(city: string, days: number = 3) {
-    const { data } = await api.get(`/forecast?city=${city}&days=${days}`);
+  async getForecast(city: string, days: number = 1) {
+    const { data } = await api.get(`/daily_forecast?city=${city}&days=${days}`);
+    console.log("forecast data: ", data)
+    return data;
+  },
+
+  async getHourlyForecast(city: string, days: number = 1) {
+    const { data } = await api.get(`/hourly_forecast?city=${city}&days=${days}`);
+    console.log("hourly forecast data: ", data)
     return data;
   }
 };
