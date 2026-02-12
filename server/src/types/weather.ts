@@ -77,6 +77,7 @@ export interface Current {
   gti: number;
 }
 
+
 export interface Condition {
   text: string;
   icon: string;

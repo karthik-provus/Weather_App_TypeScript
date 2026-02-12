@@ -7,7 +7,7 @@ import cache from '../utils/cache';
 dotenv.config();
 
 // FIX 1: Change return type to Promise<WeatherResponse>
-export const get_weather_data = async (city: string): Promise<WeatherResponse> => {
+export const get_weather_data = async (city: string, no_of_days: number = 1): Promise<WeatherResponse> => {
   const API_KEY = process.env.WEATHER_API_KEY;
   const BASE_URL = process.env.WEATHER_API;
 
@@ -17,7 +17,7 @@ export const get_weather_data = async (city: string): Promise<WeatherResponse> =
 
   // 1. DEFINE A UNIQUE KEY
   // We lowercase the query so "Pune" and "pune" are treated as the same request
-  const weather_data_cache_key = `city_search_${city.toLowerCase()}`;
+  const weather_data_cache_key = `city_weather_${city.toLowerCase()}_days_${no_of_days}`;
 
   // 2. CHECK CACHE FIRST
   const weather_cached_data = cache.get<WeatherResponse>(weather_data_cache_key);
@@ -32,7 +32,8 @@ export const get_weather_data = async (city: string): Promise<WeatherResponse> =
     const response = await axios.get<WeatherAPIResult>(BASE_URL, {
       params: { 
         key: API_KEY, 
-        q: city 
+        q: city,
+        days:no_of_days
       }
     });
 
@@ -59,3 +60,4 @@ export const get_weather_data = async (city: string): Promise<WeatherResponse> =
     throw new Error("Failed to fetch weather data. Please try again.");
   }
 };
+
