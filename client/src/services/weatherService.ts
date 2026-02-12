@@ -3,6 +3,7 @@ import { api } from './api';
 // Define the interface for the suggestion here (frontend version)
 export interface CitySuggestion {
   id: number;
+  name:string;
   label: string;
   lat: number;
   lon: number;

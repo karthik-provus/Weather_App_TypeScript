@@ -1,0 +1,46 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Cloud, Droplets, Wind, Sun } from "lucide-react";
+
+interface CurrentWeatherProps {
+  data: any; // We will properly type this once the UI is set
+}
+
+export function CurrentWeather({ data }: CurrentWeatherProps) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Main Temperature Card */}
+      <Card className="col-span-full lg:col-span-2 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <CardContent className="pt-6 flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-bold">{data.location.name}</h2>
+            <p className="text-blue-100">{data.current.condition.text}</p>
+            <div className="text-7xl font-bold mt-4">{Math.round(data.current.temp_c)}°</div>
+          </div>
+          <img src={data.current.condition.icon} alt="icon" className="w-32 h-32" />
+        </CardContent>
+      </Card>
+
+      {/* Wind Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium">Wind Speed</CardTitle>
+          <Wind className="w-4 h-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{data.current.wind_kph} km/h</div>
+        </CardContent>
+      </Card>
+
+      {/* Humidity Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium">Humidity</CardTitle>
+          <Droplets className="w-4 h-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{data.current.humidity}%</div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

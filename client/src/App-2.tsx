@@ -11,7 +11,7 @@ function App() {
     setLoading(true);
     try {
       // Use the coords for better accuracy
-      const query = `${city.name}`;
+      const query = `${city.lat},${city.lon}`;
       const data = await WeatherService.getCurrentWeather(query);
       setWeather(data);
     } catch (error) {
