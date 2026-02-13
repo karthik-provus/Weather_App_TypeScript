@@ -18,8 +18,6 @@ interface ForecastProps {
   onDaysChange: (days: number) => void;
 }
 
-// --- Helper: Get Gradient for Forecast Cards ---
-// We assume 'Day' mode (1) for forecasts since we are showing daily highs.
 const getForecastGradient = (code: number): string => {
     // 1. Thunderstorm / Rain
     if ([1087, 1273, 1276, 1279, 1282, 1063, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) {
@@ -70,7 +68,7 @@ export function Forecast({ forecastData, unit, days, onDaysChange }: ForecastPro
           <CalendarRange className="w-4 h-4 text-white/70" />
           <Slider
             defaultValue={[days]}
-            max={14}
+            max={13}
             min={1}
             step={1}
             onValueCommit={(vals) => onDaysChange(vals[0])} 

@@ -1,213 +1,385 @@
-import { useState } from "react";
-// We use 'any' for the weather objects here because your service 
-// returns a custom mapped structure, not the raw WeatherResponse type.
-import { HourData, WeatherUnit } from "@/types/weather";
-import { SearchBar } from "./SearchBar";
-import { ComparisonChart } from "./ComparisonChart";
-import { CitySuggestion, WeatherService } from "@/services/weatherService";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRightLeft, Droplets, Eye, Sun, Wind, X, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "../ui/button";
+import { SearchBar } from './SearchBar';
+import { CitySuggestion } from '@/services/weatherService';
+import { HourData, WeatherResponse, ForecastDay, WeatherUnit } from '@/types/weather';
+import { 
+  ThermometerSun, Wind, Droplets, Eye, Sun, 
+  TrendingUp, TrendingDown, Minus, MapPin
+} from 'lucide-react';
+import { ComparisonChart } from './ComparisonChart';
 
-interface ComparisonViewProps {
-  weatherA: any; // Changed to any to match your flattened structure
-  hourlyA: HourData[];
-  onClose: () => void;
-  unit: WeatherUnit;
+interface WeatherData {
+  weather: WeatherResponse | null;
+  forecast: ForecastDay[];
+  hourlyForecast: HourData[];
 }
 
-export function ComparisonView({ weatherA, hourlyA, onClose, unit }: ComparisonViewProps) {
-  const [weatherB, setWeatherB] = useState<any | null>(null);
-  const [hourlyB, setHourlyB] = useState<HourData[] | null>(null);
-  const [isLoadingB, setIsLoadingB] = useState(false);
-  const [errorB, setErrorB] = useState<string | null>(null);
+interface ComparisonViewProps {
+  city1Data: WeatherData;
+  city2Data: WeatherData;
+  unit: WeatherUnit;
+  onCitySelect: (city: CitySuggestion) => void;
+  isDarkMode: boolean;
+}
 
-  const handleCityBSelect = async (city: CitySuggestion) => {
-    setIsLoadingB(true);
-    setErrorB(null);
-    setWeatherB(null);
-
-    try {
-      const query = city.lat && city.lon ? `${city.lat},${city.lon}` : city.name;
-      
-      // FIX: We need TWO calls. 
-      // 1. Get Current Weather (for the top card info like City Name, Icon, Temp)
-      // 2. Get Hourly Data (for the chart)
-      const [currentData, hourlyData] = await Promise.all([
-          WeatherService.getCurrentWeather(query),
-          WeatherService.getHourlyForecast(query, 1)
-      ]);
-      
-      if (!currentData || !hourlyData) {
-          throw new Error("Incomplete data");
-      }
-
-      setWeatherB(currentData);
-      setHourlyB(hourlyData);
-
-    } catch (e) {
-      console.error("Failed to load City B", e);
-      setErrorB("Could not load weather for this city.");
-    } finally {
-      setIsLoadingB(false);
-    }
-  };
+export function ComparisonView({ 
+  city1Data, 
+  city2Data, 
+  unit, 
+  onCitySelect,
+  isDarkMode 
+}: ComparisonViewProps) {
+  
+  const hasCity2 = city2Data.weather !== null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-50/95 backdrop-blur-xl overflow-y-auto animate-in fade-in duration-300">
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* Comparison Header */}
+      <div className={`rounded-2xl p-6 border backdrop-blur-md shadow-lg transition-all duration-500
+        ${isDarkMode 
+          ? 'bg-white/5 border-white/10' 
+          : 'bg-white/70 border-slate-200'
+        }`}
+      >
+        <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+          City Comparison
+        </h2>
         
-        {/* --- Header --- */}
-        <div className="flex justify-between items-center mb-8 sticky top-0 bg-slate-50/95 backdrop-blur-md py-4 z-50 border-b border-slate-200/50">
-            <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-200">
-                    <ArrowRightLeft className="w-6 h-6" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-800">Compare Cities</h2>
-                    <p className="text-slate-500 text-sm">Analyze weather patterns side-by-side</p>
-                </div>
-            </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-slate-200">
-                <X className="w-6 h-6 text-slate-500" />
-            </Button>
-        </div>
-
-        {/* --- Main Comparison Grid --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            
-            {/* Left Column: City A (Fixed) */}
-            <div className="space-y-6">
-                <div className="p-6 bg-white rounded-3xl shadow-lg border border-slate-100 ring-1 ring-slate-100/50">
-                    <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">Base Location</div>
-                    {/* FIX: Use .city instead of .location.name */}
-                    <h3 className="text-3xl font-bold text-slate-800 truncate">{weatherA.city}</h3>
-                    <div className="flex items-center gap-4 mt-6">
-                        {/* FIX: Access properties directly from the flat object */}
-                        {/* <img src={weatherA.icon.replace("64x64", "128x128")} className="w-20 h-20 drop-shadow-md" /> */}
-                        <div>
-                            <div className="text-6xl font-bold text-slate-900 tracking-tighter">
-                                {Math.round(unit === WeatherUnit.C ? weatherA.temp_c : weatherA.temp_f)}°
-                            </div>
-                            <div className="text-lg text-slate-500 font-medium">{weatherA.condition}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right Column: City B (Searchable) */}
-            <div className="space-y-6">
-                {!weatherB ? (
-                    <div className="h-full min-h-[280px] flex flex-col items-center justify-center p-8 bg-white/50 border-2 border-dashed border-slate-300 rounded-3xl group hover:border-blue-400 transition-colors">
-                        {isLoadingB ? (
-                            <div className="flex flex-col items-center gap-3">
-                                <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-                                <p className="text-slate-500 font-medium">Fetching data...</p>
-                            </div>
-                        ) : errorB ? (
-                             <div className="flex flex-col items-center gap-2 text-red-500 text-center">
-                                <AlertCircle className="w-8 h-8" />
-                                <p>{errorB}</p>
-                                <Button variant="link" onClick={() => setErrorB(null)}>Try again</Button>
-                             </div>
-                        ) : (
-                            <>
-                                <p className="text-lg font-medium text-slate-500 mb-6 group-hover:text-blue-500 transition-colors">Select a city to compare</p>
-                                <div className="w-full max-w-sm relative z-20">
-                                    <SearchBar onCitySelect={handleCityBSelect} onLocationClick={() => {}} />
-                                </div>
-                            </>
-                        )}
-                    </div>
-                ) : (
-                    <div className="p-6 bg-white rounded-3xl shadow-lg border border-slate-100 relative overflow-hidden ring-1 ring-slate-100/50">
-                        <button onClick={() => setWeatherB(null)} className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-full transition-colors z-10">
-                            <X className="w-5 h-5 text-slate-400" />
-                        </button>
-                        
-                        <div className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">Comparison</div>
-                        <h3 className="text-3xl font-bold text-slate-800 truncate pr-10">{weatherB.city}</h3>
-                        <div className="flex items-center gap-4 mt-6">
-                            <img src={weatherB.icon.replace("64x64", "128x128")} className="w-20 h-20 drop-shadow-md" />
-                            <div>
-                                <div className="text-6xl font-bold text-slate-900 tracking-tighter">
-                                    {Math.round(unit === WeatherUnit.C ? weatherB.temp_c : weatherB.temp_f)}°
-                                </div>
-                                <div className="text-lg text-slate-500 font-medium">{weatherB.condition}</div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-
-        {/* --- Shared Content --- */}
-        {weatherB && hourlyB && hourlyA && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700 pb-20">
-                
-                {/* 1. The Chart */}
-                <ComparisonChart 
-                    dataA={hourlyA} 
-                    dataB={hourlyB} 
-                    nameA={weatherA.city} 
-                    nameB={weatherB.city} 
-                    unit={unit} 
-                />
-
-                {/* 2. Tale of the Tape Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <StatComparison 
-                        label="Wind" 
-                        icon={<Wind className="w-4 h-4 text-slate-500" />}
-                        valA={`${weatherA.wind_kph} km/h`}
-                        valB={`${weatherB.wind_kph} km/h`}
-                    />
-                    <StatComparison 
-                        label="Humidity" 
-                        icon={<Droplets className="w-4 h-4 text-blue-500" />}
-                        valA={`${weatherA.humidity}%`}
-                        valB={`${weatherB.humidity}%`}
-                    />
-                    {/* Check if visibility exists, as it wasn't in your snippet */}
-                    {weatherA.vis_km !== undefined && (
-                        <StatComparison 
-                            label="Visibility" 
-                            icon={<Eye className="w-4 h-4 text-indigo-500" />}
-                            valA={`${weatherA.vis_km} km`}
-                            valB={`${weatherB.vis_km || 10} km`}
-                        />
-                    )}
-                    <StatComparison 
-                        label="UV Index" 
-                        icon={<Sun className="w-4 h-4 text-orange-500" />}
-                        valA={`${weatherA.uv}`}
-                        valB={`${weatherB.uv}`}
-                    />
-                </div>
-            </div>
+        {!hasCity2 && (
+          <div className="max-w-md">
+            <p className={`mb-4 text-sm ${isDarkMode ? 'text-white/70' : 'text-slate-600'}`}>
+              Search for a second city to compare weather conditions side by side
+            </p>
+            <SearchBar
+              onCitySelect={onCitySelect}
+              onLocationClick={() => {}}
+              hideLocationButton={true}
+            />
+          </div>
         )}
       </div>
+
+      {hasCity2 && city1Data.weather && city2Data.weather && (
+        <>
+          {/* Main Comparison Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* City 1 Card */}
+            <ComparisonCityCard
+              weather={city1Data.weather}
+              forecast={city1Data.forecast}
+              unit={unit}
+              isDarkMode={isDarkMode}
+              isPrimary={true}
+            />
+
+            {/* City 2 Card */}
+            <ComparisonCityCard
+              weather={city2Data.weather}
+              forecast={city2Data.forecast}
+              unit={unit}
+              isDarkMode={isDarkMode}
+              isPrimary={false}
+            />
+          </div>
+
+          {/* Detailed Metrics Comparison */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <MetricsComparisonCard
+              label="Temperature"
+              city1Value={unit === WeatherUnit.C ? city1Data.weather.current.temp_c : city1Data.weather.current.temp_f}
+              city2Value={unit === WeatherUnit.C ? city2Data.weather.current.temp_c : city2Data.weather.current.temp_f}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit={unit === WeatherUnit.C ? '°C' : '°F'}
+              icon={<ThermometerSun className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+
+            <MetricsComparisonCard
+              label="Feels Like"
+              city1Value={unit === WeatherUnit.C ? city1Data.weather.current.feelslike_c : city1Data.weather.current.feelslike_f}
+              city2Value={unit === WeatherUnit.C ? city2Data.weather.current.feelslike_c : city2Data.weather.current.feelslike_f}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit={unit === WeatherUnit.C ? '°C' : '°F'}
+              icon={<ThermometerSun className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+
+            <MetricsComparisonCard
+              label="Wind Speed"
+              city1Value={unit === WeatherUnit.C ? city1Data.weather.current.wind_kph : city1Data.weather.current.wind_mph}
+              city2Value={unit === WeatherUnit.C ? city2Data.weather.current.wind_kph : city2Data.weather.current.wind_mph}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit={unit === WeatherUnit.C ? 'km/h' : 'mph'}
+              icon={<Wind className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+
+            <MetricsComparisonCard
+              label="Humidity"
+              city1Value={city1Data.weather.current.humidity}
+              city2Value={city2Data.weather.current.humidity}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit="%"
+              icon={<Droplets className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+
+            <MetricsComparisonCard
+              label="Visibility"
+              city1Value={unit === WeatherUnit.C ? city1Data.weather.current.vis_km : city1Data.weather.current.vis_miles}
+              city2Value={unit === WeatherUnit.C ? city2Data.weather.current.vis_km : city2Data.weather.current.vis_miles}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit={unit === WeatherUnit.C ? 'km' : 'mi'}
+              icon={<Eye className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+
+            <MetricsComparisonCard
+              label="UV Index"
+              city1Value={city1Data.weather.current.uv}
+              city2Value={city2Data.weather.current.uv}
+              city1Name={city1Data.weather.location.name}
+              city2Name={city2Data.weather.location.name}
+              unit=""
+              icon={<Sun className="w-5 h-5" />}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+
+          {/* Temperature Comparison Chart */}
+          <ComparisonChart
+            city1Data={city1Data}
+            city2Data={city2Data}
+            unit={unit}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Search for New City Button */}
+          <div className={`rounded-2xl p-6 border backdrop-blur-md shadow-lg transition-all duration-500
+            ${isDarkMode 
+              ? 'bg-white/5 border-white/10' 
+              : 'bg-white/70 border-slate-200'
+            }`}
+          >
+            <h3 className={`text-lg font-semibold mb-3 ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
+              Compare with Different City
+            </h3>
+            <SearchBar
+              onCitySelect={onCitySelect}
+              onLocationClick={() => {}}
+              hideLocationButton={true}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-// Helper for the grid
-function StatComparison({ label, icon, valA, valB }: { label: string, icon: any, valA: string, valB: string }) {
-    return (
-        <Card className="border-none shadow-md hover:shadow-lg transition-shadow bg-white">
-            <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-4 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                    {icon} {label}
-                </div>
-                <div className="flex justify-between items-baseline">
-                    <div className="text-center w-1/2 border-r border-slate-100 pr-2">
-                        <div className="text-xl font-bold text-blue-600">{valA}</div>
-                    </div>
-                    <div className="text-center w-1/2 pl-2">
-                        <div className="text-xl font-bold text-orange-600">{valB}</div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
+// Helper component for individual city cards in comparison
+function ComparisonCityCard({ 
+  weather, 
+  forecast, 
+  unit, 
+  isDarkMode, 
+  isPrimary 
+}: { 
+  weather: WeatherResponse;
+  forecast: ForecastDay[];
+  unit: WeatherUnit;
+  isDarkMode: boolean;
+  isPrimary: boolean;
+}) {
+  const temp = unit === WeatherUnit.C ? Math.round(weather.current.temp_c) : Math.round(weather.current.temp_f);
+  const feelsLike = unit === WeatherUnit.C ? Math.round(weather.current.feelslike_c) : Math.round(weather.current.feelslike_f);
+
+  return (
+    <Card className={`
+      overflow-hidden border-none shadow-xl transition-all duration-500 backdrop-blur-md
+      ${isDarkMode 
+        ? 'bg-gradient-to-br from-blue-900/50 via-indigo-900/50 to-purple-900/50 text-white' 
+        : 'bg-gradient-to-br from-blue-500/90 via-blue-400/90 to-indigo-500/90 text-white'
+      }
+      ${isPrimary ? 'ring-2 ring-blue-400 ring-offset-2 ring-offset-transparent' : ''}
+    `}>
+      <CardContent className="p-6 relative">
+        {/* Background decorations */}
+        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl" />
+        
+        <div className="relative z-10 space-y-4">
+          {/* City Name */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-white/70" />
+              <h3 className="text-2xl font-bold">{weather.location.name}</h3>
+            </div>
+            {isPrimary && (
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold">
+                Primary
+              </span>
+            )}
+          </div>
+
+          <p className="text-sm text-white/70">{weather.location.country}</p>
+
+          {/* Main Temperature Display */}
+          <div className="flex items-center justify-between py-4">
+            <div>
+              <div className="text-6xl font-bold tracking-tight">{temp}°</div>
+              <p className="text-xl font-medium text-white/90 capitalize mt-2">
+                {weather.current.condition.text}
+              </p>
+              <div className="flex items-center gap-1 mt-2 text-sm text-white/70">
+                <ThermometerSun className="w-4 h-4" />
+                Feels like {feelsLike}°
+              </div>
+            </div>
+            <div className="relative">
+              <div className="absolute inset-0 bg-white/20 blur-[40px] rounded-full" />
+              <img 
+                src={weather.current.condition.icon.replace("64x64", "128x128")} 
+                alt={weather.current.condition.text}
+                className="w-28 h-28 relative z-10 drop-shadow-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/20">
+            <div className="text-center">
+              <Wind className="w-4 h-4 mx-auto mb-1 text-white/70" />
+              <p className="text-xs text-white/60">Wind</p>
+              <p className="font-semibold text-sm">{weather.current.wind_kph} km/h</p>
+            </div>
+            <div className="text-center">
+              <Droplets className="w-4 h-4 mx-auto mb-1 text-white/70" />
+              <p className="text-xs text-white/60">Humidity</p>
+              <p className="font-semibold text-sm">{weather.current.humidity}%</p>
+            </div>
+            <div className="text-center">
+              <Eye className="w-4 h-4 mx-auto mb-1 text-white/70" />
+              <p className="text-xs text-white/60">Visibility</p>
+              <p className="font-semibold text-sm">{weather.current.vis_km} km</p>
+            </div>
+          </div>
+
+          {/* 3-Day Forecast Preview */}
+          {forecast.length > 0 && (
+            <div className="pt-4 border-t border-white/20">
+              <p className="text-sm text-white/70 mb-3">3-Day Forecast</p>
+              <div className="grid grid-cols-3 gap-2">
+                {forecast.slice(0, 3).map((day) => (
+                  <div 
+                    key={day.date} 
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-center"
+                  >
+                    <p className="text-xs text-white/60 mb-1">
+                      {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                    </p>
+                    <img 
+                      src={day.day.condition.icon} 
+                      alt={day.day.condition.text}
+                      className="w-8 h-8 mx-auto my-1"
+                    />
+                    <p className="text-sm font-semibold">
+                      {unit === WeatherUnit.C ? Math.round(day.day.avgtemp_c) : Math.round(day.day.avgtemp_f)}°
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Helper component for metric comparison cards
+function MetricsComparisonCard({
+  label,
+  city1Value,
+  city2Value,
+  city1Name,
+  city2Name,
+  unit,
+  icon,
+  isDarkMode
+}: {
+  label: string;
+  city1Value: number;
+  city2Value: number;
+  city1Name: string;
+  city2Name: string;
+  unit: string;
+  icon: React.ReactNode;
+  isDarkMode: boolean;
+}) {
+  const difference = city1Value - city2Value;
+  const percentDiff = city2Value !== 0 ? Math.abs((difference / city2Value) * 100) : 0;
+
+  const getTrendIcon = () => {
+    if (Math.abs(difference) < 0.5) return <Minus className="w-4 h-4" />;
+    return difference > 0 
+      ? <TrendingUp className="w-4 h-4 text-green-500" />
+      : <TrendingDown className="w-4 h-4 text-red-500" />;
+  };
+
+  return (
+    <Card className={`
+      border-none shadow-sm backdrop-blur-md transition-all duration-300
+      ${isDarkMode 
+        ? 'bg-white/5 hover:bg-white/10' 
+        : 'bg-white/70 hover:bg-white/80'
+      }
+    `}>
+      <CardContent className="p-4">
+        <div className={`flex items-center gap-2 mb-3 ${isDarkMode ? 'text-white/70' : 'text-slate-600'}`}>
+          {icon}
+          <span className="font-medium">{label}</span>
+        </div>
+
+        <div className="space-y-3">
+          {/* City 1 */}
+          <div className="flex items-center justify-between">
+            <span className={`text-sm ${isDarkMode ? 'text-white/60' : 'text-slate-500'}`}>
+              {city1Name}
+            </span>
+            <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              {city1Value.toFixed(1)}{unit}
+            </span>
+          </div>
+
+          {/* City 2 */}
+          <div className="flex items-center justify-between">
+            <span className={`text-sm ${isDarkMode ? 'text-white/60' : 'text-slate-500'}`}>
+              {city2Name}
+            </span>
+            <span className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              {city2Value.toFixed(1)}{unit}
+            </span>
+          </div>
+
+          {/* Difference */}
+          <div className={`flex items-center justify-between pt-2 border-t ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+            <span className={`text-xs flex items-center gap-1 ${isDarkMode ? 'text-white/50' : 'text-slate-400'}`}>
+              Difference
+            </span>
+            <span className={`text-sm font-semibold flex items-center gap-1 ${isDarkMode ? 'text-white/80' : 'text-slate-700'}`}>
+              {getTrendIcon()}
+              {Math.abs(difference).toFixed(1)}{unit} ({percentDiff.toFixed(1)}%)
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }

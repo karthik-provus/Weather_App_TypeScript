@@ -1,17 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WeatherResponse } from "@/types/weather";
-import { Car, Dumbbell, Leaf, Tent } from "lucide-react"; // Removed unused imports
+import { Car, Dumbbell, Leaf, Tent } from "lucide-react"; 
 
 interface WeatherActivitiesProps {
   weather: WeatherResponse;
-  isDay: boolean; // <--- New Prop
+  isDay: boolean;
 }
 
 export function WeatherActivities({ weather, isDay }: WeatherActivitiesProps) {
   const { temp_c, wind_kph, precip_mm, vis_km, humidity, uv } = weather.current;
   const isDark = !isDay;
 
-  // Helper to calculate score (0-10) and get a label
+  // Helper to calculate score (0-10) 
   const getActivityStatus = (activityId: string) => {
     let score = 10;
     let reason = "Perfect conditions";
@@ -79,8 +79,8 @@ export function WeatherActivities({ weather, isDay }: WeatherActivitiesProps) {
             const status = getActivityStatus(activity.id);
             
             // Dynamic Colors for the Icons/Badges
-            // If Dark Mode: Use lighter, pastel versions (e.g., bg-green-500/20 text-green-300)
-            // If Light Mode: Use standard versions (e.g., bg-green-100 text-green-700)
+            // If Dark Mode: Use lighter, pastel versions (bg-green-500/20 text-green-300)
+            // If Light Mode: Use standard versions (bg-green-100 text-green-700)
             
             const colorMap = {
                 green: isDark ? "bg-green-500/20 text-green-300" : "bg-green-100 text-green-700",
