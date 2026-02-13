@@ -6,7 +6,7 @@ interface RecentSearchesProps {
   history: CitySuggestion[];
   onSelect: (city: CitySuggestion) => void;
   onClear: (id: number) => void;
-  isDay: boolean; // <--- New Prop for Theme Adaptation
+  isDay: boolean; 
 }
 
 export function RecentSearches({ history, onSelect, onClear, isDay }: RecentSearchesProps) {

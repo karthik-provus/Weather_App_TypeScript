@@ -18,7 +18,7 @@
 // // //                         <p className="text-blue-100 font-medium">{data.current.condition.text}</p>
 // // //                         <div className="text-7xl font-extrabold mt-4 ">
 
-// // //                             {unit=='C'?Math.round(data.current.temp_c):Math.round(data.current.temp_f)}°
+// // //                             {unit==WeatherUnit.C?Math.round(data.current.temp_c):Math.round(data.current.temp_f)}°
                         
 // // //                         </div>
 // // //                     </div>
@@ -73,10 +73,10 @@
 // //         uv
 // //     } = data.current;
 
-// //     const temp = unit === 'C' ? Math.round(temp_c) : Math.round(temp_f);
-// //     const feelsLike = unit === 'C' ? Math.round(feelslike_c) : Math.round(feelslike_f);
-// //     const windSpeed = unit === 'C' ? `${wind_kph} km/h` : `${wind_mph} mph`;
-// //     const visibility = unit === 'C' ? `${vis_km} km` : `${vis_miles} miles`;
+// //     const temp = unit === WeatherUnit.C ? Math.round(temp_c) : Math.round(temp_f);
+// //     const feelsLike = unit === WeatherUnit.C ? Math.round(feelslike_c) : Math.round(feelslike_f);
+// //     const windSpeed = unit === WeatherUnit.C ? `${wind_kph} km/h` : `${wind_mph} mph`;
+// //     const visibility = unit === WeatherUnit.C ? `${vis_km} km` : `${vis_miles} miles`;
 
 // //     return (
 // //         <div className="space-y-4">
@@ -249,10 +249,10 @@
 //         uv
 //     } = data.current;
 
-//     const temp = unit === 'C' ? Math.round(temp_c) : Math.round(temp_f);
-//     const feelsLike = unit === 'C' ? Math.round(feelslike_c) : Math.round(feelslike_f);
-//     const windSpeed = unit === 'C' ? `${wind_kph} km/h` : `${wind_mph} mph`;
-//     const visibility = unit === 'C' ? `${vis_km} km` : `${vis_miles} miles`;
+//     const temp = unit === WeatherUnit.C ? Math.round(temp_c) : Math.round(temp_f);
+//     const feelsLike = unit === WeatherUnit.C ? Math.round(feelslike_c) : Math.round(feelslike_f);
+//     const windSpeed = unit === WeatherUnit.C ? `${wind_kph} km/h` : `${wind_mph} mph`;
+//     const visibility = unit === WeatherUnit.C ? `${vis_km} km` : `${vis_miles} miles`;
 
 //     // Determine the dynamic background class
 //     const bgClass = getCardGradient(data.current.condition.code, data.current.is_day);
@@ -371,12 +371,12 @@
 // }
 
 import { Card, CardContent } from "@/components/ui/card";
-import { WeatherResponse } from "@/types/weather";
+import { WeatherResponse, WeatherUnit } from "@/types/weather";
 import { Droplets, Wind, Eye, ThermometerSun, Sun } from "lucide-react";
 
 interface CurrentWeatherProps {
     data: WeatherResponse;
-    unit: "C" | "F";
+    unit: WeatherUnit;
 }
 
 // --- Helper: Dynamic Card Gradients ---
@@ -427,10 +427,10 @@ export function CurrentWeather({ data, unit }: CurrentWeatherProps) {
         uv
     } = data.current;
 
-    const temp = unit === 'C' ? Math.round(temp_c) : Math.round(temp_f);
-    const feelsLike = unit === 'C' ? Math.round(feelslike_c) : Math.round(feelslike_f);
-    const windSpeed = unit === 'C' ? `${wind_kph} km/h` : `${wind_mph} mph`;
-    const visibility = unit === 'C' ? `${vis_km} km` : `${vis_miles} miles`;
+    const temp = unit === WeatherUnit.C ? Math.round(temp_c) : Math.round(temp_f);
+    const feelsLike = unit === WeatherUnit.C ? Math.round(feelslike_c) : Math.round(feelslike_f);
+    const windSpeed = unit === WeatherUnit.C ? `${wind_kph} km/h` : `${wind_mph} mph`;
+    const visibility = unit === WeatherUnit.C ? `${vis_km} km` : `${vis_miles} miles`;
 
     const bgClass = getCardGradient(data.current.condition.code, data.current.is_day);
     

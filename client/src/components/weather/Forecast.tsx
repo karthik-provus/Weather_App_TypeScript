@@ -1,7 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { ForecastDay } from "@/types/weather";
+import { ForecastDay, WeatherUnit } from "@/types/weather";
 import { 
     CalendarDays, 
     CalendarRange, 
@@ -13,7 +13,7 @@ import {
 
 interface ForecastProps {
   forecastData: ForecastDay[];
-  unit: 'C' | 'F';
+  unit: WeatherUnit;
   days: number;
   onDaysChange: (days: number) => void;
 }
@@ -44,7 +44,7 @@ const getForecastGradient = (code: number): string => {
 export function Forecast({ forecastData, unit, days, onDaysChange }: ForecastProps) {
   
   const formatTemp = (tempC: number) => {
-    if (unit === 'C') return Math.round(tempC);
+    if (unit === WeatherUnit.C) return Math.round(tempC);
     return Math.round((tempC * 9/5) + 32);
   };
 

@@ -11,11 +11,12 @@ import { HourlyTemperature } from '@/components/weather/HourlyTemperature';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from './components/ui/button';
-import { ForecastDay, HourData, WeatherResponse } from './types/weather';
+import { ForecastDay, HourData, WeatherResponse, WeatherUnit } from './types/weather';
 import { WeatherMap } from '@/components/weather/WeatherMap';
 import { LiveAlerts } from '@/components/weather/LiveAlerts';
 import { getBackgroundGradient } from '@/lib/weatherThemes';
 import { RecentSearches } from './components/weather/RecentSearches';
+import { WeatherActivities } from './components/weather/WeatherActivities';
 
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
   const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [unit, setUnit] = useState<'C' | 'F'>('C');
+  const [unit, setUnit] = useState<WeatherUnit>(WeatherUnit.C);
   const [days, setDays] = useState<number>(3); // Default to 3 days
   const [currentQuery, setCurrentQuery] = useState<string>(""); // Keep track of active city
   const [searchHistory, setSearchHistory] = useState<CitySuggestion[]>([]);
@@ -180,8 +181,8 @@ function App() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setUnit('C')}
-              className={`rounded-md font-bold transition-all ${unit === 'C'
+              onClick={() => setUnit(WeatherUnit.C)}
+              className={`rounded-md font-bold transition-all ${unit === WeatherUnit.C
                 ? (isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-600 text-white')
                 : (isDarkMode ? 'text-blue-100 hover:text-white' : 'text-slate-500 hover:text-slate-900')
                 }`}
@@ -191,8 +192,8 @@ function App() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setUnit('F')}
-              className={`rounded-md font-bold transition-all ${unit === 'F'
+              onClick={() => setUnit(WeatherUnit.F)}
+              className={`rounded-md font-bold transition-all ${unit === WeatherUnit.F
                 ? (isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-600 text-white')
                 : (isDarkMode ? 'text-blue-100 hover:text-white' : 'text-slate-500 hover:text-slate-900')
                 }`}
@@ -240,13 +241,6 @@ function App() {
               {/* Top Row: Current Weather */}
               <CurrentWeather data={weather} unit={unit} />
 
-              {/* Middle Row: Hourly Chart
-              {hourlyForecast && (
-                <div className="grid gap-6">
-                  <HourlyTemperature data={hourlyForecast} unit={unit} />
-                </div>
-              )} */}
-
               {/* 2. Charts & Map Row */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -256,7 +250,8 @@ function App() {
                     <HourlyTemperature
                       data={hourlyForecast}
                       unit={unit}
-                      isDay={Boolean(weather.current.is_day)} // <--- Add this!
+                      isDay={Boolean(weather.current.is_day)} 
+                      key={weather.location.name}
                     />
                   )}
                 </div>
@@ -280,6 +275,13 @@ function App() {
               <div className="pt-4">
                 <Forecast forecastData={forecast} unit={unit} days={days} onDaysChange={handleDaysChange} />
               </div>
+
+              <div className="mt-6">
+                <WeatherActivities weather={weather} isDay={Boolean(weather.current.is_day)}/>
+              </div>
+
+              {/* <WeatherAISummary weather={weather} isDay={Boolean(weather.current.is_day)}/> */}
+              
 
             </div>
           )}

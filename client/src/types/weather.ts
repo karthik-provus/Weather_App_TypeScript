@@ -103,3 +103,8 @@ export interface AlertData {
   desc: string;
   instruction: string;
 }
+
+export enum WeatherUnit{
+  'C',
+  'F'
+}
