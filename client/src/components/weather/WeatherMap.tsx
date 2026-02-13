@@ -1,5 +1,5 @@
 
-import { useEffect } from "react"; // Removed useState
+import React, { useEffect } from "react"; // Removed useState
 import { Card, CardContent } from "@/components/ui/card";
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -44,9 +44,13 @@ function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number,
   return null;
 }
 
-export function WeatherMap({ lat, lon, name, onLocationSelect }: WeatherMapProps) {
-  // --- DELETED: Local state and useEffect are no longer needed ---
 
+export const WeatherMap = React.memo(function WeatherMap({
+  lat,
+  lon,
+  name,
+  onLocationSelect,
+}: WeatherMapProps) {
   return (
     <Card className="overflow-hidden border-none shadow-lg bg-white relative h-full min-h-[400px]">
       <CardContent className="p-0 w-full h-full">
@@ -60,6 +64,7 @@ export function WeatherMap({ lat, lon, name, onLocationSelect }: WeatherMapProps
           className="w-full h-full z-10 cursor-crosshair"
         >
           <TileLayer
+            keepBuffer={2} // optimization
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
@@ -82,4 +87,4 @@ export function WeatherMap({ lat, lon, name, onLocationSelect }: WeatherMapProps
       </CardContent>
     </Card>
   );
-}
+})

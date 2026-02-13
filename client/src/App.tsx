@@ -17,7 +17,8 @@ import { LiveAlerts } from '@/components/weather/LiveAlerts';
 import { getBackgroundGradient } from '@/lib/weatherThemes';
 import { RecentSearches } from './components/weather/RecentSearches';
 import { WeatherActivities } from './components/weather/WeatherActivities';
-
+import { formatWeatherSummary, summaryToString } from "@/lib/weatherFormatter";
+import { DailyBriefing } from './components/weather/DailyBriefing';
 
 function App() {
   const [forecast, setForecast] = useState<ForecastDay[]>([]);
@@ -29,6 +30,7 @@ function App() {
   const [days, setDays] = useState<number>(3); // Default to 3 days
   const [currentQuery, setCurrentQuery] = useState<string>(""); // Keep track of active city
   const [searchHistory, setSearchHistory] = useState<CitySuggestion[]>([]);
+  // const [isComparing, setIsComparing] = useState(false);
 
   // Recently Searched items
   useEffect(() => {
@@ -76,6 +78,11 @@ function App() {
       setWeather(currentData);
       setForecast(forecastData);
       setHourlyForecast(hourlyData);
+
+      const cleanSummary = formatWeatherSummary(currentData, unit);
+      console.log("Clean Summary Object:", cleanSummary);
+      console.log("Human String:", summaryToString(cleanSummary));
+
     } catch (error) {
       console.error("Failed to fetch weather", error);
       setLocationError("Could not fetch weather data. Please try again.");
@@ -115,7 +122,6 @@ function App() {
   // Auto-load on startup
   useEffect(() => {
     handleLocationClick();
-    // console.log(unit)
   }, []);
 
   // Handle Slider Change
@@ -200,6 +206,14 @@ function App() {
             >
               °F
             </Button>
+            {/* <Button
+              variant="outline"
+              onClick={() => setIsComparing(true)}
+              className="bg-white/20 backdrop-blur-md border-white/20 text-gray hover:bg-white/30"
+            >
+              <ArrowRightLeft className="w-4 h-4 mr-2 text-gray-500" />
+              Compare
+            </Button> */}
           </div>
         </header>
 
@@ -250,7 +264,7 @@ function App() {
                     <HourlyTemperature
                       data={hourlyForecast}
                       unit={unit}
-                      isDay={Boolean(weather.current.is_day)} 
+                      isDay={Boolean(weather.current.is_day)}
                       key={weather.location.name}
                     />
                   )}
@@ -277,11 +291,30 @@ function App() {
               </div>
 
               <div className="mt-6">
-                <WeatherActivities weather={weather} isDay={Boolean(weather.current.is_day)}/>
+                <WeatherActivities weather={weather} isDay={Boolean(weather.current.is_day)} />
               </div>
 
               {/* <WeatherAISummary weather={weather} isDay={Boolean(weather.current.is_day)}/> */}
-              
+              {/* {isComparing && weather && hourlyForecast && (
+                <ComparisonView
+                  weatherA={weather}
+                  hourlyA={hourlyForecast}
+                  unit={unit}
+                  onClose={() => setIsComparing(false)}
+                /> */}
+              {/* )} */}
+
+              <div className="mt-8 pb-8">
+                {weather && forecast.length > 0 && (
+                  <DailyBriefing
+                    weather={weather}
+                    forecast={forecast}
+                    unit={unit}
+                    isDay={Boolean(weather.current.is_day)} 
+                  />
+                )}
+              </div>
+
 
             </div>
           )}
@@ -321,6 +354,7 @@ function WeatherSkeleton() {
         <Skeleton className="h-[150px] w-full rounded-xl" />
         <Skeleton className="h-[150px] w-full rounded-xl" />
       </div>
+
     </div>
   );
 }

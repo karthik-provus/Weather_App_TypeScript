@@ -60,6 +60,17 @@ export interface ForecastDay {
     maxwind_kph: number;
     daily_chance_of_rain: number;
     daily_chance_of_snow: number;
+    
+  };
+  astro: {
+      sunrise: string;
+      sunset: string;
+      moonrise: string;
+      moonset: string;
+      moon_phase: string;
+      moon_illumination: number;
+      is_moon_up: number;
+      is_sun_up: number;
   };
   hour: HourData[];
 }
@@ -107,4 +118,28 @@ export interface AlertData {
 export enum WeatherUnit{
   'C',
   'F'
+}
+
+// src/types/weather.ts
+
+export interface WeatherSummary {
+  city: string;
+  condition: string;
+  temp: {
+    current: number;
+    feelsLike: number;
+    min?: number; // Optional, available if using forecast data
+    max?: number;
+  };
+  wind: {
+    speed: number;
+    dir: string;
+  };
+  atmosphere: {
+    humidity: number;
+    uv: number;
+    visibility: number;
+  };
+  isDay: boolean;
+  timestamp: string; // ISO string for when this data was captured
 }
